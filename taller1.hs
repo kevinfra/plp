@@ -24,6 +24,14 @@ abHoja x = Bin Nil x Nil
 inorder :: AB a -> [a]    
 inorder = foldAB [] (\r i d -> i ++ (r:d))
 
+-- calcula la altura de un arbol
+altura :: AB a -> Int
+altura = foldAB 0 (\raiz resIzq resDer -> 1 + max resIzq resDer)
+
+-- calcula la cantidad de nodos
+cantNodos :: AB a -> Int
+cantNodos = foldAB 0 (\raiz resIzq resDer -> (1 + resIzq) + resDer)
+
 -- Estructuras para tests
 
 -- Heap (<) completo
@@ -61,11 +69,10 @@ foldAB fNil fBin (Bin izq raiz der) =
   fBin raiz (foldAB fNil fBin izq) (foldAB fNil fBin der)
 
 foldAB2 :: b -> (a -> b -> b -> b) -> AB a -> b
-foldAB2 fNil fBin arbol = recAB (\raiz izq der resIzq resDer -> fBin raiz resIzq resDer) fNil arbol
+foldAB2 fNil fBin = recAB (\raiz izq der resIzq resDer -> fBin raiz resIzq resDer) fNil
 
 mapAB :: (a -> b) -> AB a -> AB b
-mapAB f = (\arbolA -> case arbolA of Nil -> Nil
-                      (Bin izq raiz der) -> Bin (mapAB f izq) f raiz (mapAB f der) )
+mapAB f = foldAB2 Nil (\raiz resIzq resDer -> Bin resIzq (f raiz) resDer)
 
 nilOCumple :: (a -> a -> Bool) -> a -> AB a -> Bool
 nilOCumple fComp elem Nil = True
@@ -75,21 +82,20 @@ esABB :: Ord a => AB a -> Bool
 esABB arbol = sort (inorder arbol) == (inorder arbol)
 
 esHeap :: (a -> a -> Bool)  -> AB a -> Bool
-esHeap f arbol = recAB (\raiz izq der resIzq resDer -> (nilOCumple f raiz izq) && (nilOCumple f raiz der) && resIzq && resDer) True arbol
+esHeap f = recAB (\raiz izq der resIzq resDer -> (nilOCumple f raiz izq) && (nilOCumple f raiz der) && resIzq && resDer) True
 
 completo :: AB a -> Bool
-completo = undefined
+completo arbol = (2 ^ (altura arbol)) == (cantNodos arbol) + 1
 
 insertarABB :: Ord a => AB a -> a -> AB a
 insertarABB = undefined
 
 -- Solo inserta en el lado derecho cuando el lado izquierdo esta completo y tiene mas nodos que el lado derecho
 insertarHeap :: (a -> a -> Bool) -> AB a -> a -> AB a
-insertarHeap undefined 
+insertarHeap = undefined 
 
 truncar :: AB a -> Integer -> AB a
 truncar = undefined
-
 --Ejecución de los tests
 main :: IO Counts
 main = do runTestTT allTests
@@ -105,38 +111,39 @@ allTests = test [
   ]
 
 testsEj1 = test [
-  foldAB 0 (\x resizq resder -> (x + resizq) + resder) ab1 ~=? 11,
-  foldAB2 0 (\x resizq resder -> (x + resizq) + resder) ab2 ~=? 16,
-  foldAB 0 (\x resizq resder -> (x + resizq) + resder) ab3 ~=? foldAB2 0 (\x resizq resder -> (x + resizq) + resder) ab3
+  foldAB 0 (\x resizq resder -> (x + resizq) + resder) ab1 == 11,
+  foldAB2 0 (\x resizq resder -> (x + resizq) + resder) ab2 == 16,
+  foldAB 0 (\x resizq resder -> (x + resizq) + resder) ab3 == foldAB2 0 (\x resizq resder -> (x + resizq) + resder) ab3
   ]
   
 testsEj2 = test [
-  foldAB 0 (\x resizq resder -> (x + resizq) + resder) (mapAB (+1) ab1) ~=? 14
+  foldAB 0 (\x resizq resder -> (x + resizq) + resder) (mapAB (+1) ab1) == 14
   ]
 
 testsEj3 = test [
-  nilOCumple (<) 1 Nil ~=? True
-  nilOCumple (<) 1 ab1 ~=? True
-  nilOCumple (<) 5 ab1 ~=? False
+  nilOCumple (<) 1 Nil == True
+  nilOCumple (<) 1 ab1 == True
+  nilOCumple (<) 5 ab1 == False
   ]
 
 testsEj4 = test [
-  esABB ab1 ~=? False
-  esABB ab4 ~=? False
-  esABB Nil ~=? False
-  esHeap (<) ab1 ~=? True
-  esHeap (<) ab2 ~=? True
-  esHeap (<) ab3 ~=? False
-  esHeap (<) Nil ~=? True
+  esABB ab1 == False
+  esABB ab4 == False
+  esABB Nil == False
+  esHeap (<) ab1 == True
+  esHeap (<) ab2 == True
+  esHeap (<) ab3 == False
+  esHeap (<) Nil == True
   ]
 
 testsEj5 = test [
-  0 ~=? 0 --Cambiar esto por tests verdaderos.
+  completo ab1 == True
+  completo ab4 == False
   ]
 
 testsEj6 = test [
-  True ~=? esHeap (<) (insertarHeap (<) (insertarHeap (<) ab6 3) 1),
-  True ~=? esABB (insertarABB (insertarABB ab7 6) 9)
+  True == esHeap (<) (insertarHeap (<) (insertarHeap (<) ab6 3) 1),
+  True == esABB (insertarABB (insertarABB ab7 6) 9)
   ]
 
 testsEj7 = test [

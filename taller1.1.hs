@@ -24,37 +24,52 @@ ab6 = Bin ab1 0 (abHoja 6)
 ab7 = Bin (Bin (abHoja 1) 2 (abHoja 4)) 5 (abHoja 7)
 
 
-recr :: (a -> [a] -> b -> b) -> b -> [a] -> b
-recr _ z [] = z
-recr f z (x:xs)= f x xs (recr f z xs)
+recr :: b -> (a->[a] -> b -> b) -> [a] -> b
+recr z f [] = z
+recr z f (x:xs) = f x xs (recr z f xs)
+-- Devuelve una lista con los elementos de los nodos de un árbol binario AB recorridos en profundidad de izquierda a derecha
+inorder :: AB a -> [a]
+inorder = foldAB [] (\i r d -> i ++ (r:d))
 
-recAB :: (a -> AB a -> AB a -> b -> b -> b) -> b -> AB a -> b
-recAB _ acum Nil = acum
-recAB f acum (Bin izq raiz der) = f raiz izq der (recAB f acum izq) (recAB f acum der)
 
-foldAB :: b -> (a -> b -> b -> b) -> AB a -> b
-foldAB fNil fBin (Nil) = fNil
-foldAB fNil fBin (Bin izq raiz der) =
-  fBin raiz (foldAB fNil fBin izq) (foldAB fNil fBin der)
 
-foldAB2 :: b -> (a -> b -> b -> b) -> AB a -> b
-foldAB2 fNil fBin arbol = recAB (\raiz izq der resIzq resDer -> fBin raiz resIzq resDer) fNil arbol
+--recAB :: 
+recAB::b-> (b -> a -> b -> AB a -> AB a -> b)-> AB a -> b
+recAB fNil fBin t = case t of
+    Nil -> fNil 
+    Bin t1 a t2 -> fBin (rec t1) a (rec t2) t1 t2
+    where rec = recAB fNil fBin
+
+--foldAB 
+foldAB::b->(b->a->b->b)-> AB a -> b
+foldAB fNil fBin t = case t of
+    Nil -> fNil 
+    Bin t1 a t2 -> fBin (rec t1) a (rec t2)
+    where rec = foldAB fNil fBin
 
 mapAB :: (a -> b) -> AB a -> AB b
-mapAB f = (\arbolA -> case arbolA of 
-							Nil 				-> Nil
-							(Bin izq raiz der)  -> Bin (mapAB f izq) (f raiz) (mapAB f der) )
-
-
-esABB :: Ord a => AB a -> Bool
-esABB arbol = sort (inorder arbol) == (inorder arbol)
+mapAB f = foldAB Nil (\izqrec a derrec -> Bin (izqrec) (f a) (derrec))
 
 nilOCumple :: (a -> a -> Bool) -> a -> AB a -> Bool
-nilOCumple fComp elem Nil = True
-nilOCumple fComp elem (Bin izq raiz der) = fComp elem raiz
+nilOCumple f a Nil = True 
+nilOCumple f a (Bin t1 r t2) = f a r 
 
-esHeap f arbol = recAB (\raiz izq der resIzq resDer -> (nilOCumple f raiz izq) && (nilOCumple f raiz der) && resIzq && resDer) True arbol
+esABB :: Ord a => AB a -> Bool
+esABB = (\arbol -> recr True (\x xs rec -> if (xs == []) then True else ((x < head xs) && rec)) (inorder arbol)) 
+--esABB = recAB True (\izqrec a derrec t1 t2 -> izqrec && derrec && (nilOCumple (<=) a t2) && (nilOCumple (>=) a t1)) ESTO NO ES LO QUE PIDEN
 
--- Devuelve una lista con los elementos de los nodos de un árbol binario AB recorridos en profundidad de izquierda a derecha
-inorder :: AB a -> [a]    
-inorder = foldAB [] (\r i d -> i ++ (r:d))
+esHeap :: (a -> a -> Bool)  -> AB a -> Bool
+esHeap f = recAB True (\izqrec a derrec t1 t2 -> izqrec && derrec && (nilOCumple (f) a t2) && (nilOCumple (f) a t1)) 
+
+completo :: AB a -> Bool
+completo a = (2^(altura a) - 1 == (nodos a))
+
+altura:: AB a -> Integer 
+altura = foldAB 0 (\i r d-> 1 + max i d)
+
+nodos:: AB a -> Integer 
+nodos = foldAB 0 (\i r d -> 1 + i + d)
+
+insertarABB :: Ord a => AB a -> a -> AB a
+insertarABB = recAB (abHoja) (\izqrec r derrec t1 t2 ->  \a -> if (a > r) then (if (nilOCumple (<) a t2) then Bin (izqrec r) a t2 else Bin t1 r (derrec a))
+  else (if (nilOCumple (>=) a t1) then Bin t1 a (derrec r) else Bin (izqrec a) r t2) )
