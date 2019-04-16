@@ -68,12 +68,24 @@ cantNodos = foldAB 0 (\raiz izqRes derRes -> (1 + izqRes) + derRes)
 completo :: AB a -> Bool
 completo arbol = (2 ^ (altura arbol)) == (cantNodos arbol) + 1
 
+existe :: Ord a => AB a -> a -> Bool
+existe arbol elemento = recAB (\raiz izq der resIzq resDer -> 
+	if raiz == elemento 
+		then True 
+		else 
+			if izq == Nil 
+				then False 
+				else 
+					if der == Nil 
+						then False 
+						else resIzq || resDer) False arbol
+
 insertarABB :: Ord a => AB a -> a -> AB a
 insertarABB Nil elemento = Nil
 insertarABB (Bin izq raiz der) elemento = recAB fBinrec Nil (Bin izq raiz der)
-  where fBinrec = (\raiz izq der resIzq resDer -> if elemento < raiz && izq == Nil
+  where fBinrec = (\raiz izq der resIzq resDer -> if elemento < raiz && izq == Nil && not (existe der elemento)
   	then (Bin (abHoja elemento) raiz resDer)
-  	else (if elemento >= raiz && der == Nil
+  	else (if elemento > raiz && der == Nil && not (existe izq elemento)
   		then (Bin resIzq raiz (abHoja elemento))
   		else (Bin resIzq raiz resDer)))
 
