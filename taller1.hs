@@ -88,7 +88,11 @@ completo :: AB a -> Bool
 completo arbol = (2 ^ (altura arbol)) == (cantNodos arbol) + 1
 
 insertarABB :: Ord a => AB a -> a -> AB a
-insertarABB = undefined
+insertarABB Nil elemento = Nil
+insertarABB (Bin izq raiz der) elemento = if (elemento < raiz) 
+  then Bin (fBin izq) raiz der
+  else Bin izq raiz (fBin der)
+  where fBin arbol = recAB (\raiz2 izq2 der2 resIzq resDer -> Bin resIzq raiz2 resDer ) Nil arbol
 
 -- Solo inserta en el lado derecho cuando el lado izquierdo esta completo y tiene mas nodos que el lado derecho
 insertarHeap :: (a -> a -> Bool) -> AB a -> a -> AB a
