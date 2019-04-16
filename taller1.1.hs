@@ -72,10 +72,10 @@ insertarABB :: Ord a => AB a -> a -> AB a
 insertarABB Nil elemento = Nil
 insertarABB (Bin izq raiz der) elemento = recAB fBinrec Nil (Bin izq raiz der)
   where fBinrec = (\raiz izq der resIzq resDer -> if elemento < raiz && izq == Nil
-  	then (Bin elemento raiz der)
+  	then (Bin (abHoja elemento) raiz resDer)
   	else (if elemento >= raiz && der == Nil
-  		then (Bin izq raiz elemento)
-  		else (Bin izq raiz der)))
+  		then (Bin resIzq raiz (abHoja elemento))
+  		else (Bin resIzq raiz resDer)))
 
 --insertarABB (Bin izq raiz der) elemento = if (elemento < raiz) 
 --  then Bin (fBin izq) raiz der
